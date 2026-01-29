@@ -196,32 +196,72 @@ program
     };
     saveConfig(newConfig);
 
-    // Find Claude Code settings
-    const settingsLocations = [
-      join(homedir(), ".claude", "settings.json"),
-      join(homedir(), "AppData", "Roaming", "Claude", "settings.json"),
-    ];
+    // Choose installation scope
+    const { scope } = await inquirer.prompt([
+      {
+        type: "list",
+        name: "scope",
+        message: "Where should the hook be installed?",
+        choices: [
+          {
+            name: "User (global - applies to all projects)",
+            value: "user",
+          },
+          {
+            name: "Project (shared - committed to repo via .claude/settings.json)",
+            value: "project",
+          },
+          {
+            name: "Project local (personal - gitignored via .claude/settings.local.json)",
+            value: "local",
+          },
+        ],
+      },
+    ]);
 
     let settingsPath: string | null = null;
-    for (const loc of settingsLocations) {
-      if (existsSync(loc)) {
-        settingsPath = loc;
-        break;
-      }
-    }
 
-    if (!settingsPath) {
-      // Create default location
-      settingsPath = settingsLocations[0];
-      const dir = join(homedir(), ".claude");
+    if (scope === "user") {
+      const settingsLocations = [
+        join(homedir(), ".claude", "settings.json"),
+        join(homedir(), "AppData", "Roaming", "Claude", "settings.json"),
+      ];
+
+      for (const loc of settingsLocations) {
+        if (existsSync(loc)) {
+          settingsPath = loc;
+          break;
+        }
+      }
+
+      if (!settingsPath) {
+        settingsPath = settingsLocations[0];
+        const dir = join(homedir(), ".claude");
+        if (!existsSync(dir)) {
+          const { mkdirSync } = await import("fs");
+          mkdirSync(dir, { recursive: true });
+        }
+        writeFileSync(
+          settingsPath,
+          JSON.stringify({ hooks: {} }, null, 2)
+        );
+      }
+    } else {
+      const filename = scope === "project" ? "settings.json" : "settings.local.json";
+      const dir = join(process.cwd(), ".claude");
+      settingsPath = join(dir, filename);
+
       if (!existsSync(dir)) {
         const { mkdirSync } = await import("fs");
         mkdirSync(dir, { recursive: true });
       }
-      writeFileSync(
-        settingsPath,
-        JSON.stringify({ hooks: {} }, null, 2)
-      );
+
+      if (!existsSync(settingsPath)) {
+        writeFileSync(
+          settingsPath,
+          JSON.stringify({}, null, 2)
+        );
+      }
     }
 
     // Read and update settings
