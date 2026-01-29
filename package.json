@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "cc-approve": "./bin/cc-approve.js"
+    "cc-approve": "bin/cc-approve.js"
   },
   "scripts": {
     "build": "tsc",
@@ -28,7 +28,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/malcomsonbrothers/claude-code-permission-hook"
+    "url": "git+https://github.com/malcomsonbrothers/claude-code-permission-hook.git"
   },
   "engines": {
     "node": ">=18.0.0"
