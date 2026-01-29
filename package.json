@@ -1,6 +1,6 @@
 {
   "name": "@malcomsonbrothers/claude-code-permission-hook",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Intelligent auto-approval hook for Claude Code using PermissionRequest",
   "type": "module",
   "main": "dist/index.js",
