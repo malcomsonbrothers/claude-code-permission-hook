@@ -4,7 +4,7 @@ import { readFileSync, writeFileSync, existsSync } from "fs";
 import { join } from "path";
 import { homedir } from "os";
 import chalk from "chalk";
-import inquirer from "inquirer";
+import { select, password } from "@inquirer/prompts";
 import { handlePermissionRequest } from "./permission-handler.js";
 import {
   loadConfig,
@@ -106,37 +106,29 @@ program
     console.log();
 
     // Provider selection
-    const { provider } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "provider",
-        message: "Choose your LLM provider:",
-        choices: [
-          {
-            name: "OpenRouter (recommended - lowest latency)",
-            value: "openrouter",
-          },
-          { name: "OpenAI", value: "openai" },
-          { name: "Anthropic", value: "anthropic" },
-        ],
-      },
-    ]);
+    const provider = await select<"openrouter" | "openai" | "anthropic">({
+      message: "Choose your LLM provider:",
+      choices: [
+        {
+          name: "OpenRouter (recommended - lowest latency)",
+          value: "openrouter",
+        },
+        { name: "OpenAI", value: "openai" },
+        { name: "Anthropic", value: "anthropic" },
+      ],
+    });
 
     // API key input
-    const { apiKey } = await inquirer.prompt([
-      {
-        type: "password",
-        name: "apiKey",
-        message: "Enter your API key:",
-        mask: "X",
-        validate: (input: string) => {
-          if (!input || input.trim() === "") {
-            return "API key is required";
-          }
-          return true;
-        },
+    const apiKey = await password({
+      message: "Enter your API key:",
+      mask: "X",
+      validate: (input: string) => {
+        if (!input || input.trim() === "") {
+          return "API key is required";
+        }
+        return true;
       },
-    ]);
+    });
 
     // Set provider-specific defaults
     let baseUrl: string | undefined;
@@ -201,27 +193,23 @@ program
     saveConfig(newConfig);
 
     // Choose installation scope
-    const { scope } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "scope",
-        message: "Where should the hook be installed?",
-        choices: [
-          {
-            name: "User (global - applies to all projects)",
-            value: "user",
-          },
-          {
-            name: "Project (shared - committed to repo via .claude/settings.json)",
-            value: "project",
-          },
-          {
-            name: "Project local (personal - gitignored via .claude/settings.local.json)",
-            value: "local",
-          },
-        ],
-      },
-    ]);
+    const scope = await select({
+      message: "Where should the hook be installed?",
+      choices: [
+        {
+          name: "User (global - applies to all projects)",
+          value: "user",
+        },
+        {
+          name: "Project (shared - committed to repo via .claude/settings.json)",
+          value: "project",
+        },
+        {
+          name: "Project local (personal - gitignored via .claude/settings.local.json)",
+          value: "local",
+        },
+      ],
+    });
 
     let settingsPath: string | null = null;
 
@@ -342,38 +330,30 @@ program
     const config = loadConfig();
 
     // Provider selection
-    const { provider } = await inquirer.prompt([
-      {
-        type: "list",
-        name: "provider",
-        message: "Choose your LLM provider:",
-        choices: [
-          {
-            name: "OpenRouter (recommended - lowest latency)",
-            value: "openrouter",
-          },
-          { name: "OpenAI", value: "openai" },
-          { name: "Anthropic", value: "anthropic" },
-        ],
-        default: config.llm.provider,
-      },
-    ]);
+    const provider = await select<"openrouter" | "openai" | "anthropic">({
+      message: "Choose your LLM provider:",
+      choices: [
+        {
+          name: "OpenRouter (recommended - lowest latency)",
+          value: "openrouter",
+        },
+        { name: "OpenAI", value: "openai" },
+        { name: "Anthropic", value: "anthropic" },
+      ],
+      default: config.llm.provider,
+    });
 
     // API key input
-    const { apiKey } = await inquirer.prompt([
-      {
-        type: "password",
-        name: "apiKey",
-        message: "Enter your API key:",
-        mask: "X",
-        validate: (input: string) => {
-          if (!input || input.trim() === "") {
-            return "API key is required";
-          }
-          return true;
-        },
+    const apiKey = await password({
+      message: "Enter your API key:",
+      mask: "X",
+      validate: (input: string) => {
+        if (!input || input.trim() === "") {
+          return "API key is required";
+        }
+        return true;
       },
-    ]);
+    });
 
     // Set provider-specific defaults
     let baseUrl: string | undefined;
