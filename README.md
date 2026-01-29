@@ -169,13 +169,20 @@ export OPENAI_BASE_URL=https://openrouter.ai/api/v1
 ## CLI Commands
 
 ```bash
-cc-approve permission     # Handle PermissionRequest hook (reads stdin)
-cc-approve install        # Add hook to Claude Code settings
-cc-approve uninstall      # Remove hook from settings
-cc-approve config         # Interactive configuration
-cc-approve doctor         # Diagnose configuration and connectivity
-cc-approve clear-cache    # Clear all cached decisions
-cc-approve status         # Show current configuration
+cc-approve permission       # Handle PermissionRequest hook (reads stdin)
+cc-approve install          # Add hook to Claude Code settings
+cc-approve uninstall        # Remove hook from settings
+cc-approve config           # Interactive configuration
+cc-approve config --model   # Set LLM model without interactive setup
+cc-approve doctor           # Diagnose configuration and connectivity
+cc-approve status           # Show current configuration
+cc-approve cache            # View cached decisions for the current project
+cc-approve cache --all      # View cached decisions across all projects
+cc-approve clear-cache      # Clear all cached decisions
+cc-approve clear-cache --deny-only   # Clear only deny decisions
+cc-approve clear-cache --allow-only  # Clear only allow decisions
+cc-approve clear-cache --key <hash>  # Clear a specific entry by SHA256 key
+cc-approve clear-cache --grep <str>  # Clear entries matching a substring
 ```
 
 ## Caching Behavior
@@ -187,8 +194,19 @@ cc-approve status         # Show current configuration
 - **Instant responses** for repeated operations
 
 ```bash
-# Clear cache if needed
+# View cached decisions for this project
+cc-approve cache
+
+# View all cached decisions (paginated)
+cc-approve cache --all --page 2 --per-page 10
+
+# Clear all cached decisions
 cc-approve clear-cache
+
+# Selectively clear cache
+cc-approve clear-cache --deny-only
+cc-approve clear-cache --grep "docker"
+cc-approve clear-cache --key <sha256-hash>
 
 # Disable caching in config
 {
