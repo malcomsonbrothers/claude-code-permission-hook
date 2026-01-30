@@ -5,7 +5,10 @@ import { join } from "path";
 import { homedir } from "os";
 import chalk from "chalk";
 import { select, password } from "@inquirer/prompts";
-import { handlePermissionRequest } from "./permission-handler.js";
+import {
+  handlePermissionRequest,
+  handlePreToolUse,
+} from "./permission-handler.js";
 import {
   loadConfig,
   saveConfig,
@@ -73,6 +76,44 @@ program
             behavior: "deny",
             message: `Hook error: ${errorMessage}`,
           },
+        },
+      };
+      console.log(JSON.stringify(denyResponse));
+      process.exit(1);
+    }
+  });
+
+// PreToolUse handler command (for background agents)
+program
+  .command("pretooluse")
+  .description(
+    "Handle a PreToolUse hook (reads from stdin). Use this for background agents where PermissionRequest hooks don't fire."
+  )
+  .action(async () => {
+    try {
+      const chunks: Buffer[] = [];
+      for await (const chunk of process.stdin) {
+        chunks.push(chunk);
+      }
+      const rawInput = Buffer.concat(chunks).toString("utf-8");
+      const input = JSON.parse(rawInput);
+
+      const result = await handlePreToolUse(input);
+
+      // null means passthrough: exit 0 with no output
+      if (result === null) {
+        process.exit(0);
+      }
+
+      console.log(JSON.stringify(result));
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      const denyResponse = {
+        hookSpecificOutput: {
+          hookEventName: "PreToolUse",
+          permissionDecision: "deny",
+          permissionDecisionReason: `Hook error: ${errorMessage}`,
         },
       };
       console.log(JSON.stringify(denyResponse));
