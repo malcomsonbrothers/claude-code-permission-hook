@@ -59,6 +59,7 @@ ALWAYS ALLOW:
 - Package installation (npm install, pip install, etc.)
 - Network requests to localhost or well-known APIs (github.com, npmjs.org, pypi.org, etc.)
 - git push (without --force or -f flags) to any branch
+- SQL READ operations: SELECT, EXPLAIN, DESCRIBE, SHOW, and other read-only SQL queries. These are safe data inspection commands. ALWAYS ALLOW unless the output is piped to an exfiltration command.
 
 NUANCED CASES:
 - git push --force or git push -f: DENY if targeting protected branches (main, master, production, staging, develop). ALLOW if targeting a feature/personal branch.
@@ -66,6 +67,8 @@ NUANCED CASES:
 - curl/wget: ALLOW if fetching data. DENY if posting sensitive data (env vars, credentials, private keys) to external URLs.
 - docker commands within the project: generally ALLOW.
 - Copying files from system paths (e.g. node_modules) into the project: ALLOW.
+- SQL WRITE operations (INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, CREATE): ALLOW if targeting a local/dev database (localhost, 127.0.0.1, dev/staging URLs). DENY if targeting production databases unless the command is clearly a migration tool (e.g. prisma migrate, diesel migration, sqlx migrate).
+- Sourcing .env files to get database URLs (e.g. source .env; psql "$DATABASE_URL" -c "SELECT ...") is a standard dev workflow, NOT exfiltration. The env vars are being used locally by CLI tools like psql/mysql/sqlite3, not sent to external services. ALLOW these patterns.
 
 DEFAULT TO ALLOW for standard development operations. Only DENY genuinely dangerous commands.
 
