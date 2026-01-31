@@ -1,12 +1,37 @@
 import {
   PermissionRequestInputSchema,
   PermissionRequestOutput,
+  DEFAULT_SYSTEM_PROMPT,
+  CURRENT_SYSTEM_PROMPT_VERSION,
 } from "./types.js";
 import { checkFastDecision } from "./fast-decisions.js";
-import { getCachedDecision, setCachedDecision } from "./cache.js";
+import { getCachedDecision, setCachedDecision, clearCache } from "./cache.js";
+import { loadConfig, saveConfig } from "./config.js";
 import { queryLLM } from "./llm-client.js";
 import { logDecision } from "./logger.js";
 import { resolveProjectRoot } from "./project.js";
+
+let promptUpgradeChecked = false;
+
+/**
+ * Lazily upgrade the system prompt if stale.
+ * Runs once per process — just an integer comparison on subsequent calls.
+ */
+function ensurePromptUpToDate(): void {
+  if (promptUpgradeChecked) return;
+  promptUpgradeChecked = true;
+
+  const config = loadConfig();
+  if (
+    config.autoUpdateSystemPrompt &&
+    config.llm.systemPromptVersion < CURRENT_SYSTEM_PROMPT_VERSION
+  ) {
+    config.llm.systemPrompt = DEFAULT_SYSTEM_PROMPT;
+    config.llm.systemPromptVersion = CURRENT_SYSTEM_PROMPT_VERSION;
+    saveConfig(config);
+    clearCache();
+  }
+}
 
 /** Core decision result shared by both PermissionRequest and PreToolUse handlers */
 export type DecisionResult =
@@ -24,6 +49,8 @@ export async function resolveDecision(
   cwd?: string,
   sessionId?: string
 ): Promise<DecisionResult> {
+  ensurePromptUpToDate();
+
   const projectRoot = cwd ? resolveProjectRoot(cwd) : undefined;
 
   // Tier 1: Check fast decisions (hardcoded patterns)
